@@ -78,11 +78,10 @@ class TclTk < Formula
       ENV.prepend_path "PATH", bin # so that tk finds our new tclsh
 
       resource("tk").stage do
+        args << "--with-tcl=#{lib}"
         if build.with? "x11"
-          args << "--with-tcl=#{lib}"
           args << "--with-x"
         else
-          args << "--with-tcl=#{lib}"
           args << "--enable-aqua=yes"
           args << "--without-x"
         end
