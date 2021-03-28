@@ -30,7 +30,6 @@ class TclTk < Formula
   option "without-tk", "Don't build the Tk (window toolkit)"
   option "with-x11", "Build X11-based Tk instead of Aqua-based Tk"
 
-  depends_on :x11 => :optional
   depends_on "openssl@1.1"
   depends_on "pkg-config" => :build if build.with? "x11"
 
@@ -92,6 +91,7 @@ class TclTk < Formula
       resource("tk").stage do
         args << "--with-tcl=#{lib}"
         if build.with? "x11"
+          depends_on "libx11" => :recommended
           args << "--with-x"
         else
           args << "--enable-aqua=yes"
