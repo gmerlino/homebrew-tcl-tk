@@ -1,15 +1,25 @@
+# typed: false
+# frozen_string_literal: true
+
 class TclTk < Formula
   desc "Tool Command Language"
   homepage "https://www.tcl-lang.org"
-  url "https://downloads.sourceforge.net/project/tcl/Tcl/8.6.10/tcl8.6.10-src.tar.gz"
-  mirror "https://ftp.osuosl.org/pub/blfs/conglomeration/tcl/tcl8.6.10-src.tar.gz"
-  sha256 "5196dbf6638e3df8d5c87b5815c8c2b758496eb6f0e41446596c9a4e638d87ed"
+  url "https://downloads.sourceforge.net/project/tcl/Tcl/8.6.11/tcl8.6.11-src.tar.gz"
+  mirror "https://fossies.org/linux/misc/tcl8.6.11-src.tar.gz"
+  sha256 "8c0486668586672c5693d7d95817cb05a18c5ecca2f40e2836b9578064088258"
+  license "TCL"
+  revision 1
+
+  livecheck do
+    url :stable
+    regex(%r{url=.*?/(?:tcl|tk).?v?(\d+(?:\.\d+)+)[._-]src\.t}i)
+  end
 
   bottle do
-    rebuild 1
-    sha256 "4740b30b97f0308ecc59c1308945c38ddca5d3da528d779f38199a2dad905fa1" => :catalina
-    sha256 "1851fee12a3ee44648845d8663a192712ce6827ef8fe167301d2638ac9ddb96c" => :mojave
-    sha256 "d1d689cc3e9cf08b2a42d487db3c4142e7ee4ff322bef22d6187fc67a5b776b7" => :high_sierra
+    sha256 arm64_big_sur: "81f1041b639d8e6b8d7865226917c8b2f2cff604636a35fd65108ec61a618eed"
+    sha256 big_sur:       "d9ffd39a32e602515594c4658aaab20224d9d57eeffa3aa10028736ff64ad40b"
+    sha256 catalina:      "f4027cdfd4d797d769b027f13b53e0ad714b47cd94fa02f550ff1403294467da"
+    sha256 mojave:        "23916830afd9e9fb7bf63b0c047f0b2a6f969cb746055d73ca6576e18c87e07f"
   end
 
   head do
@@ -24,18 +34,27 @@ class TclTk < Formula
   end
 
   keg_only :provided_by_macos,
-    "tk installs some X11 headers and macOS provides an (older) Tcl/Tk"
+           "tk installs some X11 headers and macOS provides an (older) Tcl/Tk"
 
-  option "without-tcllib", "Don't build tcllib (utility modules)"
-  option "without-tk", "Don't build the Tk (window toolkit)"
+  #  option "without-tcllib", "Don't build tcllib (utility modules)"
+  #  option "without-tk", "Don't build the Tk (window toolkit)"
   option "with-x11", "Build X11-based Tk instead of Aqua-based Tk"
 
-  depends_on "openssl@1.1"
   depends_on "pkg-config" => :build if build.with? "x11"
+  depends_on "openssl@1.1"
+
+  uses_from_macos "zlib"
+
+  on_linux do
+    depends_on "freetype" => :build
+    depends_on "pkg-config" => :build
+    depends_on "libx11"
+    depends_on "libxext"
+  end
 
   resource "critcl" do
-    url "https://github.com/andreas-kupries/critcl/archive/3.1.18.tar.gz"
-    sha256 "6fb0263cc8dfb787ab162ae130570c19f665a03229b8a046ec1c11809c2ff70e"
+    url "https://github.com/andreas-kupries/critcl/archive/3.1.18.1.tar.gz"
+    sha256 "51bc4b099ecf59ba3bada874fc8e1611279dfd30ad4d4074257084763c49fd86"
   end
 
   resource "tcllib" do
@@ -44,23 +63,14 @@ class TclTk < Formula
   end
 
   resource "tcltls" do
-    url "https://core.tcl-lang.org/tcltls/uv/tcltls-1.7.20.tar.gz"
-    sha256 "397a4e7cd4ea7a6dbf8a1a664e73945b91828c7c76d02474875261d22fb4e4ca"
+    url "https://core.tcl-lang.org/tcltls/uv/tcltls-1.7.22.tar.gz"
+    sha256 "e84e2b7a275ec82c4aaa9d1b1f9786dbe4358c815e917539ffe7f667ff4bc3b4"
   end
 
   resource "tk" do
-    url "https://downloads.sourceforge.net/project/tcl/Tcl/8.6.10/tk8.6.10-src.tar.gz"
-    mirror "https://fossies.org/linux/misc/tk8.6.10-src.tar.gz"
-    sha256 "63df418a859d0a463347f95ded5cd88a3dd3aaa1ceecaeee362194bc30f3e386"
-
-    # Upstream issue 7 Jan 2018 "Build failure with Aqua support on OS X 10.8 and 10.9"
-    # See https://core.tcl-lang.org/tcl/tktview/95a8293a2936e34cc8d0658c21e5214f1ca9b435
-#    if MacOS.version == :mavericks
-#      patch :p0 do
-#        url "https://raw.githubusercontent.com/macports/macports-ports/0a883ad388b2cbecf14f5ed674bfc9b6d2ce6f23/x11/tk/files/patch-macosx-tkMacOSXXStubs.c.diff"
-#        sha256 "2cdba6bbf2503307fe4f4d7200ad57c9926ebf0ff6ed3e65bf551067a30a04a9"
-#      end
-#    end
+    url "https://downloads.sourceforge.net/project/tcl/Tcl/8.6.11/tk8.6.11.1-src.tar.gz"
+    mirror "https://fossies.org/linux/misc/tk8.6.11.1-src.tar.gz"
+    sha256 "006cab171beeca6a968b6d617588538176f27be232a2b334a0e96173e89909be"
   end
 
   resource "itk4" do
@@ -84,54 +94,59 @@ class TclTk < Formula
       ln_s bin/"tclsh#{version.to_f}", bin/"tclsh"
     end
 
-    if build.with? "tk"
-      # Let tk finds our new tclsh"
-      ENV.prepend_path "PATH", bin
-  
-      resource("tk").stage do
-        args << "--with-tcl=#{lib}"
+    #    if build.with? "tk"
+    # Let tk finds our new tclsh
+    ENV.prepend_path "PATH", bin
+
+    resource("tk").stage do
+      cd "unix" do
         if build.with? "x11"
           depends_on "libx11" => :recommended
           args << "--with-x"
         else
-          args << "--enable-aqua=yes"
+          on_macos do
+            args << "--enable-aqua=yes"
+          end
           args << "--without-x"
         end
-  
-        cd "unix" do
-          system "./configure", *args
-          system "make", "TK_LIBRARY=#{lib}"
-          system "make", "install"
-          system "make", "install-private-headers"
-          ln_s bin/"wish#{version.to_f}", bin/"wish"
-        end
+        args << "--with-tcl=#{lib}"
+        system "./configure", *args
+        #        system "make", "TK_LIBRARY=#{lib}"
+        system "make"
+        system "make", "install"
+        system "make", "install-private-headers"
+        ln_s bin/"wish#{version.to_f}", bin/"wish"
       end
+      #      end
     end
 
     resource("critcl").stage do
       system bin/"tclsh", "build.tcl", "install"
     end
 
-    if build.with? "tcllib"
-      resource("tcllib").stage do
-        system "./configure", "--prefix=#{prefix}",
-                              "--mandir=#{man}"
-        system "make", "install"
+    #    if build.with? "tcllib"
+    resource("tcllib").stage do
+      system "./configure", "--prefix=#{prefix}", "--mandir=#{man}"
+      system "make", "install"
+      on_macos do
         ENV["SDKROOT"] = MacOS.sdk_path
-        system "make", "critcl"
-        cp_r "modules/tcllibc", "#{lib}/"
+      end
+      system "make", "critcl"
+      cp_r "modules/tcllibc", "#{lib}/"
+      on_macos do
         ln_s "#{lib}/tcllibc/macosx-x86_64-clang", "#{lib}/tcllibc/macosx-x86_64"
       end
     end
+    #    end
 
     resource("tcltls").stage do
       system "./configure", "--with-ssl=openssl",
-                            "--with-openssl-dir=#{Formula["openssl@1.1"].opt_prefix}",
-                            "--prefix=#{prefix}",
-                            "--mandir=#{man}"
+             "--with-openssl-dir=#{Formula["openssl@1.1"].opt_prefix}",
+             "--prefix=#{prefix}",
+             "--mandir=#{man}"
       system "make", "install"
     end
-  
+
     resource("itk4").stage do
       itcl_dir = Pathname.glob(lib/"itcl*").last
       args = %W[
@@ -145,10 +160,18 @@ class TclTk < Formula
       system "make"
       system "make", "install"
     end
+
+    # Conflicts with perl
+    mv man/"man3/Thread.3", man/"man3/ThreadTclTk.3"
   end
 
   test do
     assert_equal "honk", pipe_output("#{bin}/tclsh", "puts honk\n").chomp
+
+    on_linux do
+      # Fails with: no display name and no $DISPLAY environment variable
+      return if ENV["HOMEBREW_GITHUB_ACTIONS"]
+    end
 
     test_itk = <<~EOS
       # Check that Itcl and Itk load, and that we can define, instantiate,
